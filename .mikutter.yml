@@ -1,0 +1,9 @@
+---
+slug: :mikutter_faq
+depends:
+  mikutter: 3.5.0-develop
+  plugin: [extract]
+version: '1.0'
+author: shibafu528
+name: mikutter_faq
+description: 'mikutter FAQ'
