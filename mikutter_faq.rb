@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 require 'json'
 require 'open-uri'
-require 'nokogiri'
 
 module Plugin::Faq
   class Question < Retriever::Model
@@ -10,10 +9,8 @@ module Plugin::Faq
     field.string :name, required: true
 
     def profile_image_url
-      Skin.get('icon.png')
+      Skin['icon.png']
     end
-
-    def idname; nil; end
   end
   
   class Faq < Retriever::Model
@@ -23,19 +20,16 @@ module Plugin::Faq
 
     field.string :question, required: true
     field.string :answer, required: true
+    field.string :id, required: true
     field.time   :created
     field.has    :user, Plugin::Faq::Question
 
-    def to_show
-      @to_show ||= self[:question] + "\n\n" + self[:answer]
+    def path
+      "/#{id}"
     end
 
-    def user
-      self[:user] ||= Plugin::Faq::Question.new(name: 'mikutter FAQ')
-    end
-
-    def uri
-      self[:uri] ||= URI('faq://faq/' + self[:question].hash.to_s)
+    def description
+      "#{question}\n\n#{answer}"
     end
   end
 
@@ -49,18 +43,18 @@ Plugin.create(:mikutter_faq) do
 
   def tick
     Thread.new {
-      open('http://mikutter.hachune.net/faq.json').read
+      open('https://mikutter.hachune.net/faq.json').read
     }.next { |doc|
-      JSON.parse(doc)
+      JSON.parse(doc, symbolize_names: true)
     }.next { |json|
       json.map do |item|
-        Plugin::Faq::Faq.new(question: item[0], 
-                             answer:   Nokogiri::HTML(item[1]).content, 
-                             created:  Time.now)
+        Plugin::Faq::Faq.new(created:  Time.now,
+                             user: {name: 'mikutter FAQ'},
+                             **item)
       end
     }.next { |items|
       Plugin.call :extract_receive_message, :faq, items
-    }
+    }.terminate
 
     Reserver.new(3600) { tick }
   end
