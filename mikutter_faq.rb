@@ -43,7 +43,7 @@ Plugin.create(:mikutter_faq) do
 
   def tick
     Thread.new {
-      open('https://mikutter.hachune.net/faq.json').read
+      URI.open('https://mikutter.hachune.net/faq.json').read
     }.next { |doc|
       JSON.parse(doc, symbolize_names: true)
     }.next { |json|
